@@ -1,0 +1,59 @@
+apply plugin: 'war'
+
+// TODO MED: hard-coded into someone's tomcat installation!
+def tomcatHome='/local/apache-tomcat-6.0.33'
+
+dependencies {
+  compile project(':demo-impl')
+  compile spec.external.servletApi
+}
+
+war {
+  webXml = file('webapp/WEB-INF/web.xml') // copies a file to WEB-INF/web.xml
+  classpath "${project.projectDir}/resources/velocity-templates.jar"
+  classpath "${buildDir}/classes/log4j.xml"
+}
+
+classes << {
+  ant.jar(destfile: "${project.projectDir}/resources/velocity-templates.jar",
+          basedir: "${project.projectDir}/resources", includes: "*.html")
+  println("DEBUG copy from ${rootDir}/bldshared/log4j-template.xml --> ${buildDir}/classes/")
+  copy {
+    from "${rootDir}/bldshared/log4j-template.xml"
+    // Trick to make sure log4j.xml is included in the WAR in the classes directory
+    into "${buildDir}/classes/main/"
+    rename 'log4j-template.xml', 'log4j.xml'
+  }
+}
+
+task deployLocal(dependsOn: 'war') << {
+  println "Copying from ${libsDir.getPath()} into ${tomcatHome}/webapps"
+  copy {
+    from libsDir.getPath()
+    into "${tomcatHome}/webapps"
+    include '**/*.war'
+  }
+}
+
+
+// Official example - doesn't work
+
+/*apply plugin: 'li-war'
+
+dependencies {
+  components project(':demo-impl')
+}
+
+war {
+  //classpath fileTree(dir: "${project.projectDir}/src/main/resources", include: '*')
+  classpath "${project.projectDir}/resources/velocity-templates.jar"
+}
+
+classes << {
+  ant.jar(destfile: "${project.projectDir}/resources/velocity-templates.jar",
+          basedir: "${project.projectDir}/resources", includes: "*.html")
+}
+
+liWar {
+  appname = "demo"
+}*/

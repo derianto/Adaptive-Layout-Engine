@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app PUBLIC '-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN'
+ 'http://java.sun.com/dtd/web-app_2_3.dtd'>
+
+<web-app>
+
+  <!-- context listener -->
+  <listener>
+    <listener-class>org.dk.aledemo.servlet.AleDemoServletContextListener</listener-class>
+  </listener>
+
+  <!-- servlet definitions -->
+  <servlet>
+    <servlet-name>MainPageServlet</servlet-name>
+    <servlet-class>org.dk.aledemo.servlet.MainPageServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet>
+    <servlet-name>ArticleProviderServlet</servlet-name>
+    <servlet-class>org.dk.aledemo.servlet.ArticleProviderServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet>
+    <servlet-name>LayoutEngineServlet</servlet-name>
+    <servlet-class>org.dk.aledemo.servlet.LayoutEngineServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <!-- servlet mappings -->
+  <servlet-mapping>
+    <servlet-name>MainPageServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ArticleProviderServlet</servlet-name>
+    <url-pattern>/article</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>LayoutEngineServlet</servlet-name>
+    <url-pattern>/layout</url-pattern>
+  </servlet-mapping>
+
+</web-app>

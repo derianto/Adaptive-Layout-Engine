@@ -1,0 +1,566 @@
+<html>
+<head>
+  <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+  <script src="https://github.com/douglascrockford/JSON-js/blob/master/json.js"></script>
+  
+  <!-- <script src="dust-full-0.3.0.min.js"></script> -->
+
+  <!-- BROKEN with my local files
+
+  <link type="text/css" href="css/themename/jquery-ui-1.8.16.custom.css" rel="Stylesheet" />
+  <script src="http://code.jquery.com/jquery-1.6.4.js"></script>
+  <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+  <script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script>
+
+  -->
+<style>
+  div.main-panel {
+    min-width: 1400px;
+//    min-height: 800px;
+    border: #000000 solid 1px;
+    margin: 10px;
+//    overflow: auto;
+  }
+
+  div.left-panel {
+    float: left;
+    position: relative;
+    width: 700px;
+    border: #000000 solid 1px;
+    margin: 10px;
+  }
+
+  div.right-panel {
+    position: absolute;
+    left: 730px;
+    border: #000000 solid 1px;
+    margin: 10px;
+  }
+
+  div.tiles-panel {
+    position: relative;
+    height: 600px;
+    border: #000000 solid 1px;
+    margin: 10px;
+    overflow: auto;
+  }
+
+  div.control-panel {
+    position: relative;
+    min-height: 200px;
+    border: #000000 solid 1px;
+    margin: 10px;
+  }
+
+  div.monitoring-panel {
+    position: relative;
+    min-height: 200px;
+    border: #000000 solid 1px;
+    margin: 10px;
+  }
+
+  div.result-parent-panel {
+    position: relative;
+    min-width: 900px;
+    min-height: 700px;
+    border: #000000 solid 1px;
+    margin: 10px;
+    background-color: rgb(255, 255, 255);
+  }
+  
+  div.result-panel {
+    position: relative;
+    min-width: 900px;
+    min-height: 700px;
+    margin: 0px;
+    background-color: rgb(255, 255, 255);
+  }
+
+  div.article {
+    border: #CFCFCF solid 1px;
+    margin: 2px;
+  }
+
+  p {
+    color: #000000;
+    opacity: 1.0
+  }
+
+  p.penalty {
+    font-weight: bold;
+    color: #7F0000;
+  }
+
+  p.penalty-value {
+    color: #FF0000;
+  }
+
+  div.slider-container {
+    height: 30px;
+  }
+  
+  div.slider {
+    float: left;
+    margin: 0px;
+    width: 400px;
+  }
+  
+  p.slider-label {
+    float: left;
+    margin: 0px;
+    width: 150px;
+    font-size: 75%;
+  }
+  
+  div.slider-callout {
+    margin-left: 15px;
+    float: left;
+  }
+  
+  div.tile {
+    position: absolute;
+    overflow: hidden;
+  }
+  
+  img.tile-image {
+    position: absolute;
+  }
+  
+  p.tile-paragraph {
+    position: absolute;
+    text-shadow: #FFFFFF 2px 2px;
+    opacity: 0.6;
+    left: 0px;
+    top: 0px;
+  }
+  
+</style>
+<script>
+
+  // To prevent conflict with Velocity dollar notation
+  var J = jQuery;
+
+  // --------- GLOBAL VARIABLES ------------
+
+  var tileDebugMode = false;
+
+  //var clicked = new Array();
+  var selectedArticleBgColor = 'rgb(207, 207, 255)';
+  var resultPanelBgColor0 = 'rgb(255, 255, 255)';
+  var resultPanelBgColor1 = 'rgb(192, 192, 192)';
+  var resultPanelBgColor2 = 'rgb(0, 0, 0)';
+
+  // ------- END OF GLOBAL VARIABLES -------
+
+  // Create slider
+  var createSlider = function(sliderName, min, max, value, step) {
+    console.log('createSlider(' + sliderName + ')');
+  
+    var sliderUpdate = function(e, ui) {
+      J('.slider-callout#' + sliderName).text(ui.value);
+    };
+    
+    var slider = J('.slider#' + sliderName).slider({
+      handle: '.slider-handle#' + sliderName,
+      min: min,
+      max: max,
+      value: value,
+      step: step,
+      create: sliderUpdate,
+      slide: sliderUpdate,
+      stop: sliderUpdate
+    });
+
+    J('.slider-callout#' + sliderName).text(Math.round(value));
+  }
+
+  // Get slider value  
+  var getSliderValue = function(sliderName) {
+    return J('.slider#' + sliderName).slider('value');
+  }
+  
+  // Create and position a tile
+  var createTile = function(id, desiredX, desiredY, desiredW, desiredH, origW, origH, title, src) {
+
+    $('.result-panel').append(
+      '<div class="tile" id="t' + id +'">' +
+        '<img class="tile-image" id="t' + id + '" src="' + src + '" \/\>' +
+        '<p class="tile-paragraph" id="t' + id + '">' + title + '</p>' +
+      '</div>');
+    
+    console.log('position ' + '.tile#t' + id);
+    
+    var tileObj = $('.tile#t' + id);
+    var imageObj = $('.tile-image#t' + id);
+    var parObj = $('.tile-paragraph#t' + id);
+    
+    var origAR = origW / origH;
+    var desiredAR = desiredW / desiredH;
+    
+    var x0, y0, w0, h0, topMargin, leftMargin;
+    
+    if (desiredAR >= origAR) {
+      x0 = desiredX;
+      w0 = desiredW;      
+      h0 = Math.floor(w0 * origH / origW);
+      y0 = desiredY + Math.floor(0.5 * (desiredH - h0));
+      topMargin = desiredY - y0;
+      leftMargin = 0;
+    }
+    else {
+      y0 = desiredY;
+      h0 = desiredH;
+      w0 = Math.floor(h0 * origW / origH);
+      x0 = desiredX + Math.floor(0.5 * (desiredW - w0));
+      topMargin = 0;
+      leftMargin = desiredX - x0;
+    }
+
+    console.log('DEBUG origWH(' + origW + ',' + origH + ')');
+    console.log('DEBUG desiredXY(' + desiredX + ',' + desiredY + ') desiredWH(' + desiredW + ',' + desiredH + ')');
+    console.log('DEBUG x0,y0(' + x0 + ',' + y0 + ') w0,h0(' + w0 + ',' + h0 + ')');
+
+    tileObj.css({
+      'left': desiredX + 20, // margin
+      'top': desiredY + 20, // margin
+      'width': desiredW,
+      'height': desiredH
+    });
+    imageObj.css({
+      'left': -leftMargin,
+      'top': -topMargin,
+      'width': w0,
+      'height': h0
+    });
+  }
+
+  // Toggle tile debug mode
+  toggleTileDebugMode = function()
+  {
+    if (!tileDebugMode)
+    {
+      J('.tile').css({
+        'overflow': 'visible',
+        'border': '#000000 1px solid'
+      });
+      J('.tile-image').css({
+        'opacity': 0.3,
+      });
+      
+      tileDebugMode = true;
+    }
+    else
+    {
+      J('.tile').css({
+        'overflow': 'hidden',
+        'border': 'none'
+      });
+      J('.tile-image').css({
+        'opacity': 1.0,
+      });
+
+      tileDebugMode = false;
+    }
+    console.log('toggleTileDebugMode to ' + tileDebugMode);
+  }
+
+  // Toggle result panel background
+  toggleResultPanelBackground = function()
+  {
+    var obj = $('.result-panel');
+    var origColor = obj.css('background-color');
+    if (origColor == resultPanelBgColor0) {
+      obj.css('background-color', resultPanelBgColor1);
+    } else if (origColor == resultPanelBgColor1) {
+      obj.css('background-color', resultPanelBgColor2);
+    } else {
+      obj.css('background-color', resultPanelBgColor0);
+    }
+    console.log('toggleResultPanelBackground to ' + obj.css('background-color'));
+  }
+
+  // http://snippets.dzone.com/posts/show/849
+  shuffle = function(o){
+    for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+  };
+
+  getDropdownValue = function(dropdownName) {
+    return $('.select#' + dropdownName).val();
+  }
+
+  getArticleIds = function() {
+    var articleIds = new Array();
+
+    J('.article').each(function(index, obj) {
+      var id = $(obj).attr('id').substr(1); 
+      //console.log('Examining id = ' + id);
+      if ($(obj).css('background-color') == selectedArticleBgColor) {
+        articleIds.push(id);
+      }
+    });
+    
+    return articleIds;
+  }
+
+  getLayoutParameters = function() {
+    // Populate article ids
+    var layoutParam = new Object();
+    layoutParam['articleIds'] = getArticleIds();
+    layoutParam['articleOrdering'] = getDropdownValue('articleOrdering');
+    layoutParam['articleUse'] = getDropdownValue('articleUse');
+    layoutParam['containerWidth'] = getSliderValue('width');
+    layoutParam['containerHeight'] = getSliderValue('height');
+    layoutParam['horizontalPadding'] = getSliderValue('hPadding');
+    layoutParam['verticalPadding'] = getSliderValue('vPadding');
+    layoutParam['penaltyForSmallElement'] = getSliderValue('smallPenalty');
+    layoutParam['penaltyForHighAspectRatio'] = getSliderValue('arPenalty');
+    layoutParam['penaltyForAspectRatioChange'] = getSliderValue('arChangePenalty');
+    layoutParam['penaltyForUpscaling'] = getSliderValue('upscalingPenalty');
+    layoutParam['maxProcessingMsec'] = getSliderValue('maxProcessing');
+    
+    return layoutParam;
+  }
+
+  // Submit button click
+  submitLayoutChange = function() {
+    J.ajax({
+      type: 'POST',
+      url: 'layout',
+      data: JSON.stringify(getLayoutParameters()),
+      //data: getLayoutParameters(),
+      context: J('.tiles-panel'),
+      success: function(response) {
+
+        // Clear image tiles
+        J('.result-panel').empty();
+
+        // Put image tiles
+        for (id in response['imagePlacements']) {
+          var paragraphObj = J('.article-paragraph#t' + id);
+          var imgObj = J('.article-image#t' + id);
+          var imagePlacement = response['imagePlacements'][id];
+          console.log('id = ' + id + ' desiredY = ' + imagePlacement['absoluteTop'] + ' origW = ' + imgObj.css('width') + ' title = ' + paragraphObj.text() + ' src = ' + imgObj.attr('src'));
+          createTile(id, imagePlacement['absoluteLeft'], imagePlacement['absoluteTop'], imagePlacement['croppedWidth'], imagePlacement['croppedHeight'],
+                     parseInt(imgObj.css('width'), 10), parseInt(imgObj.css('height'), 10), paragraphObj.text(), imgObj.attr('src'));
+        }
+
+        // Display score
+        var penaltyValue = response['score']['totalPenalty']; 
+        console.log('penaltyValue = ' + penaltyValue);
+        J('.penalty-value').text(penaltyValue);
+      },
+      error: function(jqXHR, textStatus, errorThrown)
+      {
+        console.error("textStatus = " + textStatus + "\nerrorThrown = " + errorThrown);
+      }
+    });  
+  }
+
+  J(document).ready(function() {
+    console.log('at document ready()');
+
+    // DEBUG TEST --- TODO HIGH REMOVE LATER
+    createTile(0, 100, 150, 120, 110, 107, 80, "NASA launched toaster to the moon", "small.png");
+    createTile(1, 100, 262, 120, 60, 107, 80, "Second article", "small.png");
+    createTile(2, 221, 150, 70, 70, 107, 80, "Third article", "small.png");
+    createTile(3, 221, 222, 70, 100, 107, 80, "Fourth article", "small.png");
+    createTile(4, 292, 150, 150, 172, 107, 80, "BREAKING NEWS", "small.png");
+    
+    createSlider('width', 400, 1000, 700, 5);
+    createSlider('height', 300, 1000, 500, 5);
+    createSlider('hPadding', 0, 20, 2, 1);
+    createSlider('vPadding', 0, 20, 2, 1);
+    createSlider('smallPenalty', 0, 10.0, 1.0, 0.1);
+    createSlider('arPenalty', 0, 10.0, 1.0, 0.1);
+    createSlider('arChangePenalty', 0, 10.0, 2.0, 0.1);
+    createSlider('upscalingPenalty', 0, 10.0, 3.0, 0.1);
+    createSlider('maxProcessing', 2, 20, 5, 1);
+
+    // Create buttons
+    $('.submit-button').click(function()
+    {
+      submitLayoutChange();
+    });
+
+    // Article pulling
+    J.ajax({
+      type: 'POST',
+      url: 'article',
+      data: '',
+      context: J('.tiles-panel'),
+      success: function(response) {
+
+        var shuffledIds = new Array();
+        for (id in response) {
+          shuffledIds.push(id);
+        }
+        shuffledIds = shuffle(shuffledIds);
+
+        // Create article tiles
+        console.log("shuffledIds = " + shuffledIds);
+        console.log("response = " + response);
+        for (idx in shuffledIds) {
+          var id = shuffledIds[idx];
+          var primaryImage = response[id]["primaryImage"];
+          J(this).append(
+            '<div class="article" id="t' + id + '">' + 
+              '<img class="article-image" id="t' + id + '" width="' + primaryImage['width'] + 'px" height="' + primaryImage['height'] + 'px" src="' + primaryImage['imageUrl'] + '" \/\>' +
+              '<p class="article-paragraph" id="t' + id + '">' + response[id]['title'] + '</p>' +
+            '</div>');
+        }
+        
+        // Article selection
+        J('.article').click(function () {
+          var id = parseInt(this.id);
+          console.log('at article click() for id = ' + id + ' and current background-color = ' + J(this).css('background-color'));
+          if (J(this).css('background-color') != selectedArticleBgColor) {
+            J(this).css('background-color', selectedArticleBgColor);
+          } else {
+            J(this).css('background-color', 'transparent');
+          }
+        })
+      },
+      error: function(jqXHR, textStatus, errorThrown)
+      {
+        console.error("textStatus = " + textStatus + "\nerrorThrown = " + errorThrown);
+      }
+    });
+    
+    // 'd': toggle tile debug mode
+    $(document).keydown(function(e){
+      // 'd' / 'D'
+      if (e.keyCode == 68 || e.keyCode == 100) 
+      {
+        toggleTileDebugMode();
+      };
+    });
+
+    // 'b': toggle result panel background
+    $(document).keydown(function(e){
+      // 'b' / 'B'
+      if (e.keyCode == 66 || e.keyCode == 98) 
+      {
+        toggleResultPanelBackground();
+      };
+    });
+  });
+
+</script>
+
+</head>
+<body>
+  <h1>Adaptive Layout Demo</h1>
+  <div class="main-panel">
+    <div class="left-panel">
+      <h3>Select articles (select at least 8-10 articles!)</h3>
+      <div class="tiles-panel">
+      </div>
+      <div class="control-panel">
+        <h3>Layout parameters</h3>
+        <div class="slider-container">
+          <p class="slider-label">Width</p>
+          <div class="slider" id="width">
+            <div class="slider-handle" id="width"></div>
+          </div>
+          <div class="slider-callout" id="width"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Height</p>
+          <div class="slider" id="height">
+            <div class="slider-handle" id="height"></div>
+          </div>
+          <div class="slider-callout" id="height"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">H padding</p>
+          <div class="slider" id="hPadding">
+            <div class="slider-handle" id="hPadding"></div>
+          </div>
+          <div class="slider-callout" id="hPadding"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">V padding</p>
+          <div class="slider" id="vPadding">
+            <div class="slider-handle" id="vPadding"></div>
+          </div>
+          <div class="slider-callout" id="vPadding"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Small element penalty</p>
+          <div class="slider" id="smallPenalty">
+            <div class="slider-handle" id="smallPenalty"></div>
+          </div>
+          <div class="slider-callout" id="smallPenalty"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">High AR penalty</p>
+          <div class="slider" id="arPenalty">
+            <div class="slider-handle" id="arPenalty"></div>
+          </div>
+          <div class="slider-callout" id="arPenalty"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">AR change penalty</p>
+          <div class="slider" id="arChangePenalty">
+            <div class="slider-handle" id="arChangePenalty"></div>
+          </div>
+          <div class="slider-callout" id="arChangePenalty"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Upscaling penalty</p>
+          <div class="slider" id="upscalingPenalty">
+            <div class="slider-handle" id="upscalingPenalty"></div>
+          </div>
+          <div class="slider-callout" id="upscalingPenalty"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Max latency</p>
+          <div class="slider" id="maxProcessing">
+            <div class="slider-handle" id="maxProcessing"></div>
+          </div>
+          <div class="slider-callout" id="maxProcessing"></div>
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Article ordering</p>
+          <select class="select" id="articleOrdering">
+            <option value="FIXED_OPTIMIZED">Fixed, optimized</option>
+            <option value="FLEXIBLE_OPTIMIZED">Flexible, optimized</option>
+            <option value="FIXED">Fixed (not good)</option>
+            <option value="FLEXIBLE">Flexible (not good)</option>
+          </select>         
+        </div>
+        <div class="slider-container">
+          <p class="slider-label">Article use</p>
+          <select class="select" id="articleUse">
+            <option value="ALL">All</option>
+            <option value="SOME">Some (allow deletion)</option>
+          </select>         
+        </div>
+        
+        <button class="submit-button">Calculate</button>
+        <p>The more articles are selected, the better the layout will be</p>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="monitoring-panel">
+        <h3>Layout score</h3>
+        <div>
+          <p class="penalty" style="float: left">Penalty:</p>
+          <p class="penalty-value" style="float: left"></p>
+        </div>
+      </div>
+      <div class="result-parent-panel">
+        <h3>Layout result</h3>
+        <p>Keyboard: 'd': debug view, 'b': change background</p>
+        <div class="result-panel">
+        </div>
+      </div>
+      <div style="clear:both;"></div>
+    </div>
+    <div style="clear:both;"></div>
+  </div>
+</body>
+</html>

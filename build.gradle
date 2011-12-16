@@ -1,0 +1,88 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath 'org.linkedin:org.linkedin.gradle-plugins:1.5.0'
+  }
+}
+
+apply plugin: 'idea'
+apply plugin: 'org.linkedin.userConfig'
+apply plugin: 'org.linkedin.spec'
+apply plugin: 'java'
+
+topBuildDir = "${rootDir}/build"
+topDistDir = "${rootDir}/dist"
+
+// Add repository to resolve libraries not present in artifactory
+repositories {
+  mavenCentral()
+}
+
+// Root level dependencies are used for constructing IDE files
+dependencies {
+  for(entry in spec.external) {
+    println('entry = ' + entry)
+    compile entry.value
+  }
+}
+
+// Idea settings
+idea {
+  module {
+    excludeDirs += file('./build')
+    excludeDirs += file('./dist')
+    excludeDirs += file('./.git')
+    excludeDirs += file('./.gradle')
+
+    file('./').eachDir { module ->
+      if (!module.name.startsWith('.') &&
+          !module.name.startsWith('build') &&
+          !module.name.startsWith('dist') &&
+          !module.name.startsWith('config'))
+      {
+        file(module).eachDir { folder ->
+          if (folder.name.equals('java'))
+          {
+            sourceDirs += folder
+          }
+          else if (folder.name.equals('test'))
+          {
+            testSourceDirs += folder
+          }
+        }
+      }
+    }
+  }
+}
+
+//Examples of how to iterate over all sub-projects; see gradle DSL for
+//Project for details.
+
+subprojects { subproj ->
+
+  // li-java pulls in java, eclipse, and idea
+  apply plugin: 'li-java'
+
+  sourceSets {
+    main {
+      java {
+        srcDir 'java'
+      }
+      resources {
+        srcDir 'resources'
+      }
+    }
+  }
+
+  // Add repository to resolve libraries not present in artifactory
+  repositories {
+    mavenCentral()
+  }
+
+  // all subprojects will have this property set; ideally, only
+  // java subprojects really need this
+  subproj.sourceCompatibility = JavaVersion.VERSION_1_6
+}

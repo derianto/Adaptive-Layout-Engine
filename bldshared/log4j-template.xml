@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+  <appender name="WebAppRollingFileAppender" class="org.apache.log4j.DailyRollingFileAppender">
+    <param name="File" value="logs/app.log"/>
+    <param name="Append" value="true"/>
+    <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{yyyy/MM/dd HH:mm:ss.SSS} %p [%t] [%c{1}] %m%n" />
+    </layout>
+  </appender>
+
+  <appender name="cleanRollingFileAppender" class="org.apache.log4j.DailyRollingFileAppender">
+    <param name="File" value="logs/algorithm.log"/>
+    <param name="Append" value="true"/>
+    <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%m%n" />
+    </layout>
+  </appender>
+
+  <root>
+    <level value="info" />
+    <appender-ref ref="WebAppRollingFileAppender" />
+  </root>
+
+  <logger name="org.dk.aledemo.algorithm" additivity="false">
+    <level value="info" />
+    <appender-ref ref="cleanRollingFileAppender" />
+  </logger>
+</log4j:configuration>
