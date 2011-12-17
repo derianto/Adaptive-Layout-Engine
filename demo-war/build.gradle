@@ -34,26 +34,3 @@ task deployLocal(dependsOn: 'war') << {
     include '**/*.war'
   }
 }
-
-
-// Official example - doesn't work
-
-/*apply plugin: 'li-war'
-
-dependencies {
-  components project(':demo-impl')
-}
-
-war {
-  //classpath fileTree(dir: "${project.projectDir}/src/main/resources", include: '*')
-  classpath "${project.projectDir}/resources/velocity-templates.jar"
-}
-
-classes << {
-  ant.jar(destfile: "${project.projectDir}/resources/velocity-templates.jar",
-          basedir: "${project.projectDir}/resources", includes: "*.html")
-}
-
-liWar {
-  appname = "demo"
-}*/

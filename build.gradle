@@ -4,6 +4,7 @@ buildscript {
   }
 
   dependencies {
+    classpath 'org.json:json:20090211'
     classpath 'org.linkedin:org.linkedin.gradle-plugins:1.5.0'
   }
 }
@@ -16,7 +17,9 @@ apply plugin: 'java'
 topBuildDir = "${rootDir}/build"
 topDistDir = "${rootDir}/dist"
 
-// Add repository to resolve libraries not present in artifactory
+println("topBuildDir = $topBuildDir")
+println("topDistDir = $topDistDir")
+
 repositories {
   mavenCentral()
 }
@@ -63,8 +66,12 @@ idea {
 
 subprojects { subproj ->
 
-  // li-java pulls in java, eclipse, and idea
-  apply plugin: 'li-java'
+  apply plugin: 'java'
+
+  buildDir = "${topBuildDir}${project.path.replace(':','/')}".toString()
+
+  sourceCompatibility = '1.6'
+  targetCompatibility = '1.6'
 
   sourceSets {
     main {
@@ -77,12 +84,9 @@ subprojects { subproj ->
     }
   }
 
-  // Add repository to resolve libraries not present in artifactory
   repositories {
     mavenCentral()
   }
 
-  // all subprojects will have this property set; ideally, only
-  // java subprojects really need this
   subproj.sourceCompatibility = JavaVersion.VERSION_1_6
 }

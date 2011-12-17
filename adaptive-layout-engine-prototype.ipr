@@ -45,9 +45,7 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/demo-impl/demo-impl.iml" filepath="$PROJECT_DIR$/demo-impl/demo-impl.iml"/>
       <module fileurl="file://$PROJECT_DIR$/adaptive-layout-engine-prototype.iml" filepath="$PROJECT_DIR$/adaptive-layout-engine-prototype.iml"/>
-      <module fileurl="file://$PROJECT_DIR$/demo-war/demo-war.iml" filepath="$PROJECT_DIR$/demo-war/demo-war.iml"/>
     </modules>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-type="JavaSDK" assert-jdk-15="true" project-jdk-name="1.5">
