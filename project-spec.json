@@ -1,10 +1,10 @@
 {
   "name": "aledemo",
-  "group": "com.linkedin.@spec.name@",
+  "group": "org.dk.@spec.name@",
   "version": "0.1-SNAPSHOT",
   "level": "none",
   "owners": [
-    "dkusuma@linkedin.com",
+    "deriantok@gmail.com",
    ],
    "tags": [
      "adaptive", "layout", "layouting", "engine", "today", "dynamic", "presentation", "content"
